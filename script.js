@@ -1,0 +1,417 @@
+(() => {
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const page = document.body.dataset.page;
+  let revealObserver = null;
+  const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[character]);
+  const phoneHref = wedding.contact.phone.replace(/[^\d+]/g, "");
+  const whatsappHref = wedding.contact.whatsapp.replace(/\D/g, "");
+  const mapUrl = (query, embed = false) => `https://www.google.com/maps${embed ? "" : "/search/"}?${embed ? "q" : "api=1&query"}=${encodeURIComponent(query)}${embed ? "&output=embed" : ""}`;
+  const countdownMarkup = (id) => `<div class="countdown" id="${id}" role="timer" aria-live="off"><span class="countdown-status"></span><div class="countdown-units">${wedding.copy.countdownLabels.map((label, index) => `<div><strong data-unit="${["days", "hours", "minutes", "seconds"][index]}">00</strong><span>${escapeHtml(label)}</span></div>`).join("")}</div></div>`;
+  const sectionHeading = (label, heading) => `<div class="section-heading fade-up"><p class="eyebrow">${escapeHtml(label)}</p><h2>${escapeHtml(heading)}</h2><span class="ornament" aria-hidden="true">✳</span></div>`;
+
+  const nav = () => `
+    <header class="site-header${page === "home" ? "" : " is-subpage"}" id="top">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span></button>
+      <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+        <div class="nav-side nav-left"><a href="index.html#program">${escapeHtml(wedding.copy.nav[0])}</a><a href="index.html#story">${escapeHtml(wedding.copy.nav[1])}</a><a href="gallery.html">${escapeHtml(wedding.copy.nav[2])}</a></div>
+        <a class="monogram" href="index.html#top" aria-label="${escapeHtml(wedding.title)}">${escapeHtml(wedding.title)}</a>
+        <div class="nav-side nav-right"><a href="index.html#details">${escapeHtml(wedding.copy.nav[3])}</a><a href="index.html#directions">${escapeHtml(wedding.copy.nav[4])}</a><a href="index.html#contact">${escapeHtml(wedding.copy.nav[5])}</a></div>
+      </nav>
+    </header>`;
+
+  const footer = () => `
+    <footer class="site-footer"><a class="monogram" href="index.html#top">${escapeHtml(wedding.title)}</a><p class="toast">${escapeHtml(wedding.toast)}</p><p>${escapeHtml(wedding.copy.footer.thankYou)}</p><span class="footer-ornament" aria-hidden="true">✳</span></footer>
+    <div class="scroll-progress" aria-hidden="true"><span></span></div>`;
+
+  const imageMarkup = (photo, alt, className = "", loading = "lazy") => {
+    if (!photo) return "";
+    return `<img${className ? ` class="${className}"` : ""} src="${escapeHtml(photo.thumb)}" alt="${escapeHtml(alt)}" width="${Number(photo.width)}" height="${Number(photo.height)}" loading="${loading}" decoding="async">`;
+  };
+  const fullImageMarkup = (photo, alt, className = "", loading = "lazy") => {
+    if (!photo) return "";
+    return `<img${className ? ` class="${className}"` : ""} src="${escapeHtml(photo.full)}" alt="${escapeHtml(alt)}" width="${Number(photo.width)}" height="${Number(photo.height)}" loading="${loading}" decoding="async">`;
+  };
+
+  const getProgramImage = (item) => {
+    if (!item.image || !wedding.gallery[item.image]) return null;
+    return wedding.gallery[item.image][item.photoIndex || 0] || null;
+  };
+
+  const eventCard = (event, kind) => {
+    const heading = kind === "traditional" ? wedding.copy.details.traditional : kind === "church" ? wedding.copy.details.church : wedding.copy.details.reception;
+    const details = kind === "traditional"
+      ? `<p class="event-complete">${escapeHtml(wedding.copy.details.completed)}</p><a class="text-link traditional-photos-link" href="gallery.html?tab=traditional">${escapeHtml(wedding.copy.details.photos)} <span aria-hidden="true">→</span></a>`
+      : `<dl><div><dt>${escapeHtml(wedding.copy.details.dateLabel)}</dt><dd>${event.date === "TBD" ? escapeHtml(wedding.copy.details.tbd) : new Date(event.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos" })}</dd></div>${kind === "church" ? `<div><dt>${escapeHtml(wedding.copy.details.timeLabel)}</dt><dd>${escapeHtml(wedding.copy.details.churchTime)}</dd></div>` : ""}<div><dt>${escapeHtml(wedding.copy.details.venueLabel)}</dt><dd>${escapeHtml(event.venue)}</dd></div></dl>${kind === "church" ? countdownMarkup("details-countdown") : ""}`;
+    return `<article class="event-card fade-up"><p class="eyebrow">${kind === "traditional" ? "01" : kind === "church" ? "02" : "03"}</p><h3>${escapeHtml(heading)}</h3>${details}</article>`;
+  };
+
+  const directionsCard = (kind, event) => `
+    <article class="map-card fade-up">
+      <div><p class="eyebrow">${escapeHtml(wedding.copy.directions[kind])}</p><h3>${escapeHtml(event.venue)}</h3><p>${escapeHtml(event.address || event.venue)}</p>
+        <figure class="roadmap-slot" hidden><button class="roadmap-open" type="button" aria-label="Open ${escapeHtml(wedding.copy.directions[kind])} roadmap"><img src="${escapeHtml(event.roadmap)}" alt="${escapeHtml(wedding.copy.directions.roadmapAlt)}" width="1200" height="800" loading="lazy" decoding="async"><span>Tap to view roadmap</span></button></figure>
+        <p class="map-notes">${escapeHtml(event.notes)}</p><a class="button button-outline" href="${mapUrl(event.mapQuery)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.directions.directionsButton)} <span aria-hidden="true">→</span></a><a class="map-fallback" href="${mapUrl(event.mapQuery)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.directions.fallback)}</a>
+      </div><iframe title="${escapeHtml(wedding.copy.directions[kind])} map: ${escapeHtml(event.venue)}" src="${mapUrl(event.mapQuery, true)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </article>`;
+
+  const renderHome = () => {
+    const churchDate = wedding.events.church.date === "TBD" ? wedding.copy.status.tbd : new Date(wedding.events.church.date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos" });
+    return `
+      <main>
+        <section class="hero" id="home">
+          <div class="hero-content fade-up"><p class="eyebrow">${escapeHtml(wedding.copy.heroLabel)}</p><h1>${escapeHtml(wedding.couple.bride)} <span>&amp;</span> ${escapeHtml(wedding.couple.groom)}</h1><p class="hero-intro">${escapeHtml(wedding.copy.invitation)}</p><p class="hero-date">${escapeHtml(churchDate)}<br><span>${escapeHtml(wedding.events.church.venue)}</span></p>${countdownMarkup("hero-countdown")}<div class="hero-actions"><a class="button button-primary button-large" href="#program">${escapeHtml(wedding.copy.heroActions[0])} <span aria-hidden="true">→</span></a><a class="button button-light-outline" href="#directions">${escapeHtml(wedding.copy.heroActions[1])}</a></div></div>
+          ${wedding.images.hero ? fullImageMarkup(wedding.gallery.preWedding[3], "Precious and Aaron at their pre-wedding shoot", "hero-photo", "eager") : ""}
+          <a class="scroll-cue" href="#program" aria-label="Scroll to wedding program">↓</a>
+        </section>
+        <section class="section program-section" id="program">${sectionHeading(wedding.copy.program.label, wedding.copy.program.heading)}
+          <div class="program-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.program.heading)}"><button id="church-tab" role="tab" type="button" aria-selected="true" aria-controls="church-program" tabindex="0">${escapeHtml(wedding.copy.program.churchTab)}</button><button id="reception-tab" role="tab" type="button" aria-selected="false" aria-controls="reception-program" tabindex="-1">${escapeHtml(wedding.copy.program.receptionTab)}</button></div>
+          <div class="program-layout"><div class="program-panel-wrap" id="church-program" role="tabpanel" aria-labelledby="church-tab"><ol class="program-list">${homeProgramItems(wedding.program.church, "church")}</ol></div><div class="program-panel-wrap" id="reception-program" role="tabpanel" aria-labelledby="reception-tab" hidden><ol class="program-list">${homeProgramItems(wedding.program.reception, "reception")}</ol></div><figure class="program-photo"><img src="${escapeHtml(getProgramImage(wedding.program.church[0])?.thumb || "")}" alt="${escapeHtml(wedding.program.church[0].title)}" width="${Number(getProgramImage(wedding.program.church[0])?.width || 800)}" height="${Number(getProgramImage(wedding.program.church[0])?.height || 1000)}" loading="lazy" decoding="async"><figcaption class="photo-caption">${escapeHtml(wedding.program.church[0].title)}</figcaption></figure></div>
+          <a class="button button-outline print-button" href="program.html">${escapeHtml(wedding.copy.program.fullLink)} <span aria-hidden="true">→</span></a>
+        </section>
+        <section class="section story-section" id="story">${sectionHeading(wedding.copy.story.label, wedding.story.heading)}<div class="story-layout"><div class="story-copy fade-up"><p>${escapeHtml(wedding.story.text)}</p><p class="story-names">${escapeHtml(wedding.fullNames)}</p></div><div class="story-photos fade-up">${imageMarkup(wedding.gallery.preWedding[2], wedding.copy.story.photoAlt[0], "story-photo-main arch-image")} ${imageMarkup(wedding.gallery.preWedding[0], wedding.copy.story.photoAlt[1], "story-photo-small arch-image")}</div></div></section>
+        <section class="section details-section" id="details">${sectionHeading(wedding.copy.details.label, wedding.copy.details.heading)}<div class="event-grid">${eventCard(wedding.events.traditional, "traditional")}${eventCard(wedding.events.church, "church")}${eventCard(wedding.events.reception, "reception")}</div></section>
+        <section class="section directions-section" id="directions">${sectionHeading(wedding.copy.directions.label, wedding.copy.directions.heading)}<div class="maps-grid">${directionsCard("church", wedding.events.church)}${directionsCard("reception", wedding.events.reception)}</div></section>
+        <section class="section gallery-section" id="gallery">${sectionHeading(wedding.copy.gallery.label, wedding.copy.gallery.heading)}<div class="gallery-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.gallery.heading)}">${galleryTabMarkup("home-gallery")}</div><div class="gallery-panel" id="home-gallery-panel" role="tabpanel" aria-labelledby="home-gallery-tab-0"><div class="gallery-grid home-gallery-grid"></div></div><p class="gallery-empty" hidden>${escapeHtml(wedding.copy.gallery.coming)}</p><a class="button button-outline gallery-full-link" href="gallery.html">${escapeHtml(wedding.copy.gallery.seeFull)} <span aria-hidden="true">→</span></a></section>
+        <section class="section know-section" id="good-to-know">${sectionHeading(wedding.copy.goodToKnow.label, wedding.copy.goodToKnow.heading)}<div class="know-grid"><article class="know-card fade-up"><p class="eyebrow">01</p><h3>${escapeHtml(wedding.copy.goodToKnow.colours)}</h3><div class="swatches">${wedding.colours.map((colour) => `<div><span style="--swatch:${escapeHtml(colour.hex)}" aria-hidden="true"></span><small>${escapeHtml(colour.name)}</small></div>`).join("")}</div></article><article class="know-card fade-up"><p class="eyebrow">02</p><h3>${escapeHtml(wedding.copy.goodToKnow.arrival)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.arrivalText)}</p></article><article class="know-card fade-up"><p class="eyebrow">03</p><h3>${escapeHtml(wedding.copy.goodToKnow.travel)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.travelText)}</p></article><article class="know-card fade-up"><p class="eyebrow">04</p><h3>${escapeHtml(wedding.copy.goodToKnow.questions)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.questionText)}</p><a class="text-link" href="index.html#contact">${escapeHtml(wedding.copy.contactSection.heading)} <span aria-hidden="true">→</span></a></article></div></section>
+        <section class="contact-section" id="contact"><div class="contact-content fade-up"><p class="eyebrow">${escapeHtml(wedding.copy.contactSection.label)}</p><h2>${escapeHtml(wedding.copy.contactSection.heading)}</h2><p class="contact-name">${escapeHtml(wedding.contact.name)}</p><p class="contact-phone">${escapeHtml(wedding.contact.phone)}</p><div class="contact-actions"><a class="button button-primary" href="https://wa.me/${whatsappHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.contactSection.whatsapp)} <span aria-hidden="true">→</span></a><a class="text-link" href="tel:${phoneHref}">${escapeHtml(wedding.copy.contactSection.call)}</a></div></div></section>
+      </main>`;
+  };
+
+  const homeProgramItems = (items, prefix) => items.slice(0, 6).map((item, index) => `
+    <li class="program-item"><button class="program-trigger" type="button" id="${prefix}-trigger-${index}" aria-expanded="${index === 0}" aria-controls="${prefix}-panel-${index}"><span class="program-number">${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(item.title)}</span><span class="accordion-icon" aria-hidden="true">+</span></button><div class="program-panel" id="${prefix}-panel-${index}" role="region" aria-labelledby="${prefix}-trigger-${index}" ${index === 0 ? "" : "hidden"}><p class="program-time">${escapeHtml(item.time || "")}</p><p>${escapeHtml(item.description || "")}</p>${item.notes ? `<p class="program-note">${escapeHtml(item.notes)}</p>` : ""}</div></li>`).join("");
+
+  const galleryTabMarkup = (prefix) => wedding.copy.gallery.tabs.map((label, index) => `<button type="button" role="tab" id="${prefix}-tab-${index}" aria-controls="${prefix}-panel" aria-selected="${index === 0}" tabindex="${index === 0 ? "0" : "-1"}">${escapeHtml(label)}</button>`).join("");
+
+  const renderGalleryPage = () => `
+    <main class="subpage-main gallery-page">
+      <section class="section full-gallery-section" id="full-gallery">${sectionHeading(wedding.copy.gallery.label, wedding.copy.gallery.heading)}<a class="text-link back-link" href="index.html">${escapeHtml(wedding.copy.gallery.backHome)} <span aria-hidden="true">←</span></a>
+        <div class="gallery-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.gallery.heading)}">${galleryTabMarkup("full-gallery")}</div>
+        <div class="gallery-panel" id="full-gallery-panel" role="tabpanel" aria-labelledby="full-gallery-tab-0"><div class="gallery-grid full-gallery-grid"></div></div>
+        <p class="gallery-empty" hidden>${escapeHtml(wedding.copy.gallery.coming)}</p>
+        <button class="button button-outline load-more-button" type="button">${escapeHtml(wedding.copy.gallery.loadMore)}</button>
+      </section>
+    </main>`;
+
+  const programFields = (item) => `
+    ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+    ${item.notes ? `<p class="program-note"><strong>${escapeHtml(wedding.copy.program.notesLabel)}:</strong> ${escapeHtml(item.notes)}</p>` : ""}
+    ${item.hymn ? `<p class="program-detail"><span>Hymn</span>${escapeHtml(item.hymn)}</p>` : ""}
+    ${item.speaker ? `<p class="program-detail"><span>Speaker</span>${escapeHtml(item.speaker)}</p>` : ""}`;
+
+  const timelineMarkup = (items) => {
+    let lastGroup = null;
+    return items.map((item, index) => {
+      const groupHeading = item.group && item.group !== lastGroup ? `<h3 class="timeline-group">${escapeHtml(item.group)}</h3>` : "";
+      lastGroup = item.group || null;
+      return `${groupHeading}<article class="timeline-item fade-up"><div class="timeline-time">${escapeHtml(item.time || "")}</div><div class="timeline-marker" aria-hidden="true"></div><div class="timeline-content"><p class="eyebrow">${String(index + 1).padStart(2, "0")}</p><h3>${escapeHtml(item.title || "")}</h3>${programFields(item)}</div></article>`;
+    }).join("");
+  };
+
+  const renderProgramPage = () => `
+    <main class="subpage-main program-page">
+      <section class="section full-program-section">${sectionHeading(wedding.copy.program.label, wedding.copy.program.heading)}<a class="text-link back-link" href="index.html#program">Back to home <span aria-hidden="true">←</span></a>
+        <div class="program-sticky-tabs"><div class="program-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.program.heading)}"><button id="full-church-tab" role="tab" type="button" aria-selected="true" aria-controls="full-church-panel" tabindex="0">${escapeHtml(wedding.copy.program.churchTab)}</button><button id="full-reception-tab" role="tab" type="button" aria-selected="false" aria-controls="full-reception-panel" tabindex="-1">${escapeHtml(wedding.copy.program.receptionTab)}</button></div></div>
+        <section class="timeline-panel" id="full-church-panel" role="tabpanel" aria-labelledby="full-church-tab"><div class="timeline">${timelineMarkup(wedding.program.church)}</div></section>
+        <section class="timeline-panel" id="full-reception-panel" role="tabpanel" aria-labelledby="full-reception-tab" hidden><div class="timeline">${timelineMarkup(wedding.program.reception)}</div></section>
+        <button class="button button-outline print-button print-program" type="button">${escapeHtml(wedding.copy.program.print)} <span aria-hidden="true">↗</span></button>
+      </section>
+    </main>`;
+
+  const mainMarkup = page === "gallery" ? renderGalleryPage() : page === "program" ? renderProgramPage() : renderHome();
+  $("#site").innerHTML = `${nav()}${mainMarkup}${footer()}`;
+
+  const header = $(".site-header");
+  const menuToggle = $(".menu-toggle");
+  const siteNav = $("#site-nav");
+  const setHeaderState = () => header.classList.toggle("is-scrolled", window.scrollY > 24);
+  window.addEventListener("scroll", setHeaderState, { passive: true });
+  setHeaderState();
+  menuToggle.addEventListener("click", () => {
+    const open = menuToggle.getAttribute("aria-expanded") !== "true";
+    menuToggle.setAttribute("aria-expanded", String(open));
+    menuToggle.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
+    siteNav.classList.toggle("is-open", open);
+    document.body.classList.toggle("menu-open", open);
+  });
+  $$("#site-nav a").forEach((link) => link.addEventListener("click", () => {
+    siteNav.classList.remove("is-open");
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.setAttribute("aria-label", "Open navigation");
+    document.body.classList.remove("menu-open");
+  }));
+  $$(".print-program").forEach((button) => button.addEventListener("click", () => window.print()));
+
+  const updateProgramPhoto = (item) => {
+    const photo = getProgramImage(item);
+    const image = $(".program-photo img");
+    if (!image || !photo) return;
+    image.src = photo.thumb;
+    image.width = photo.width;
+    image.height = photo.height;
+    image.alt = item.title;
+    $(".program-photo figcaption").textContent = item.title;
+  };
+
+  const homeProgramTabs = $$(".program-tabs [role=tab]").filter((tab) => tab.id === "church-tab" || tab.id === "reception-tab");
+  const activateHomeProgramTab = (tab) => {
+    homeProgramTabs.forEach((item) => {
+      const selected = item === tab;
+      item.setAttribute("aria-selected", String(selected));
+      item.tabIndex = selected ? 0 : -1;
+      $(`#${item.getAttribute("aria-controls")}`).hidden = !selected;
+    });
+    const list = tab.id === "church-tab" ? wedding.program.church : wedding.program.reception;
+    if (list.length) updateProgramPhoto(list[0]);
+  };
+  homeProgramTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => activateHomeProgramTab(tab));
+    tab.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      event.preventDefault();
+      const next = homeProgramTabs[(index + (event.key === "ArrowRight" ? 1 : -1) + homeProgramTabs.length) % homeProgramTabs.length];
+      next.focus();
+      activateHomeProgramTab(next);
+    });
+  });
+  $$(".program-trigger").forEach((button) => button.addEventListener("click", () => {
+    const panel = $(`#${button.getAttribute("aria-controls")}`);
+    const willOpen = button.getAttribute("aria-expanded") !== "true";
+    const list = button.closest(".program-list");
+    $$(".program-trigger", list).forEach((sibling) => {
+      sibling.setAttribute("aria-expanded", "false");
+      $(`#${sibling.getAttribute("aria-controls")}`).hidden = true;
+    });
+    if (willOpen) {
+      button.setAttribute("aria-expanded", "true");
+      panel.hidden = false;
+      const itemIndex = Number(button.id.split("-").pop());
+      const items = button.id.startsWith("church-") ? wedding.program.church : wedding.program.reception;
+      updateProgramPhoto(items[itemIndex]);
+    }
+  }));
+
+  const fullProgramTabs = $$(".program-sticky-tabs [role=tab]");
+  const activateFullProgramTab = (tab) => {
+    fullProgramTabs.forEach((item) => {
+      const selected = item === tab;
+      item.setAttribute("aria-selected", String(selected));
+      item.tabIndex = selected ? 0 : -1;
+      $(`#${item.getAttribute("aria-controls")}`).hidden = !selected;
+    });
+    observeFadeUps();
+  };
+  fullProgramTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => activateFullProgramTab(tab));
+    tab.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      event.preventDefault();
+      const next = fullProgramTabs[(index + (event.key === "ArrowRight" ? 1 : -1) + fullProgramTabs.length) % fullProgramTabs.length];
+      next.focus();
+      activateFullProgramTab(next);
+    });
+  });
+
+  const galleryGroups = [wedding.gallery.preWedding, wedding.gallery.traditional, wedding.gallery.whiteWedding];
+  const galleryTabs = $$(".gallery-tabs [role=tab]");
+  const galleryGrid = page === "gallery" ? $(".full-gallery-grid") : $(".home-gallery-grid");
+  const galleryPanel = page === "gallery" ? $("#full-gallery-panel") : $("#home-gallery-panel");
+  const galleryEmpty = $(".gallery-empty");
+  const loadMoreButton = $(".load-more-button");
+  let activeGalleryIndex = 0;
+  let activePhotoIndex = 0;
+  let visiblePhotoCount = 12;
+  let lightboxOpener = null;
+
+  const createPhotoButtons = (photos, start, end, groupIndex) => photos.slice(start, end).map((photo, offset) => `
+    <button class="gallery-item fade-up" type="button" data-photo-index="${start + offset}" aria-label="Open ${escapeHtml(wedding.copy.gallery.tabs[groupIndex])} photo ${start + offset + 1}">
+      ${imageMarkup(photo, `${wedding.copy.gallery.tabs[groupIndex]} photograph ${start + offset + 1}`)}
+    </button>`).join("");
+
+  const renderGallery = (index) => {
+    activeGalleryIndex = index;
+    visiblePhotoCount = 12;
+    galleryTabs.forEach((tab, tabIndex) => {
+      const selected = index === tabIndex;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    galleryPanel.setAttribute("aria-labelledby", galleryTabs[index].id);
+    const photos = galleryGroups[index];
+    const homeLimit = page === "home" ? 6 : photos.length;
+    const limit = Math.min(visiblePhotoCount, homeLimit, photos.length);
+    galleryPanel.hidden = photos.length === 0;
+    if (galleryEmpty) galleryEmpty.hidden = photos.length !== 0;
+    galleryGrid.innerHTML = createPhotoButtons(photos, 0, limit, index);
+    if (loadMoreButton) loadMoreButton.hidden = limit >= photos.length;
+    observeFadeUps();
+  };
+
+  galleryTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => renderGallery(index));
+    tab.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      event.preventDefault();
+      const nextIndex = (index + (event.key === "ArrowRight" ? 1 : -1) + galleryTabs.length) % galleryTabs.length;
+      galleryTabs[nextIndex].focus();
+      renderGallery(nextIndex);
+    });
+  });
+  loadMoreButton?.addEventListener("click", () => {
+    const photos = galleryGroups[activeGalleryIndex];
+    const nextCount = Math.min(visiblePhotoCount + 12, photos.length);
+    galleryGrid.insertAdjacentHTML("beforeend", createPhotoButtons(photos, visiblePhotoCount, nextCount, activeGalleryIndex));
+    visiblePhotoCount = nextCount;
+    loadMoreButton.hidden = visiblePhotoCount >= photos.length;
+    observeFadeUps();
+  });
+  if (page === "gallery") {
+    const selectedTab = new URLSearchParams(window.location.search).get("tab");
+    renderGallery(selectedTab === "traditional" ? 1 : selectedTab === "white" ? 2 : 0);
+  } else if (page === "home") {
+    renderGallery(0);
+  }
+
+  const lightbox = $("#lightbox");
+  const lightboxImage = $("img", lightbox);
+  const lightboxCaption = $("figcaption", lightbox);
+  const lightboxButtons = [$(".lightbox-prev", lightbox), $(".lightbox-next", lightbox)];
+  const displayLightboxPhoto = () => {
+    const photo = galleryGroups[activeGalleryIndex][activePhotoIndex];
+    lightboxImage.src = photo.full;
+    lightboxImage.width = photo.width;
+    lightboxImage.height = photo.height;
+    lightboxImage.alt = `${wedding.copy.gallery.tabs[activeGalleryIndex]} photograph ${activePhotoIndex + 1}`;
+    lightboxCaption.textContent = `${wedding.copy.gallery.tabs[activeGalleryIndex]} · ${activePhotoIndex + 1} / ${galleryGroups[activeGalleryIndex].length}`;
+    lightbox.classList.remove("roadmap-view");
+    lightboxImage.classList.remove("is-zoomed");
+    lightboxButtons.forEach((button) => button.hidden = false);
+  };
+  const openLightbox = (index, opener) => {
+    activePhotoIndex = index;
+    lightboxOpener = opener;
+    displayLightboxPhoto();
+    lightbox.hidden = false;
+    document.body.classList.add("lightbox-open");
+    $(".lightbox-close", lightbox).focus();
+  };
+  const closeLightbox = () => {
+    lightbox.hidden = true;
+    document.body.classList.remove("lightbox-open");
+    lightboxOpener?.focus();
+  };
+  const moveLightbox = (direction) => {
+    const photos = galleryGroups[activeGalleryIndex];
+    activePhotoIndex = (activePhotoIndex + direction + photos.length) % photos.length;
+    displayLightboxPhoto();
+  };
+  galleryGrid?.addEventListener("click", (event) => {
+    const button = event.target.closest(".gallery-item");
+    if (button) openLightbox(Number(button.dataset.photoIndex), button);
+  });
+  $(".lightbox-close", lightbox)?.addEventListener("click", closeLightbox);
+  lightboxButtons[0]?.addEventListener("click", () => moveLightbox(-1));
+  lightboxButtons[1]?.addEventListener("click", () => moveLightbox(1));
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+  lightboxImage.addEventListener("click", () => lightboxImage.classList.toggle("is-zoomed"));
+  document.addEventListener("keydown", (event) => {
+    if (lightbox.hidden) return;
+    if (event.key === "Escape") closeLightbox();
+    if (!lightbox.classList.contains("roadmap-view")) {
+      if (event.key === "ArrowLeft") moveLightbox(-1);
+      if (event.key === "ArrowRight") moveLightbox(1);
+    }
+    if (event.key === "Tab") {
+      const focusable = $$("button", lightbox);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  $$(".roadmap-slot img").forEach((image) => {
+    image.addEventListener("load", () => { image.closest(".roadmap-slot").hidden = false; });
+    image.addEventListener("error", () => { image.closest(".roadmap-slot").hidden = true; });
+  });
+  $$(".roadmap-open").forEach((button) => button.addEventListener("click", () => {
+    const image = $("img", button);
+    lightboxImage.src = image.src;
+    lightboxImage.width = image.naturalWidth;
+    lightboxImage.height = image.naturalHeight;
+    lightboxImage.alt = image.alt;
+    lightboxCaption.textContent = image.alt;
+    lightbox.classList.add("roadmap-view");
+    lightboxImage.classList.remove("is-zoomed");
+    lightboxButtons.forEach((control) => control.hidden = true);
+    lightboxOpener = button;
+    lightbox.hidden = false;
+    document.body.classList.add("lightbox-open");
+    $(".lightbox-close", lightbox).focus();
+  }));
+
+  if (page === "home") {
+    $$(".countdown").forEach((element) => {
+      const eventDate = wedding.events.church.date;
+      const targetDate = eventDate === "TBD" ? Number.NaN : new Date(eventDate).getTime();
+      const status = $(".countdown-status", element);
+      const units = $(".countdown-units", element);
+      const update = () => {
+        if (Number.isNaN(targetDate)) {
+          status.textContent = wedding.copy.status.tbd;
+          units.hidden = true;
+          return;
+        }
+        const difference = targetDate - Date.now();
+        if (element.id === "hero-countdown" && difference <= 0 && difference > -12 * 60 * 60 * 1000) {
+          status.textContent = wedding.copy.status.today;
+          units.hidden = true;
+          return;
+        }
+        if (difference <= 0) {
+          status.textContent = element.id === "hero-countdown" ? wedding.copy.status.thanks : wedding.copy.status.today;
+          units.hidden = true;
+          return;
+        }
+        status.textContent = "";
+        units.hidden = false;
+        const seconds = Math.floor(difference / 1000);
+        const values = { days: Math.floor(seconds / 86400), hours: Math.floor((seconds % 86400) / 3600), minutes: Math.floor((seconds % 3600) / 60), seconds: seconds % 60 };
+        Object.entries(values).forEach(([unit, value]) => { $(`[data-unit="${unit}"]`, element).textContent = String(value).padStart(2, "0"); });
+      };
+      update();
+      window.setInterval(update, 1000);
+    });
+  }
+
+  const progressBar = $(".scroll-progress span");
+  const updateProgress = () => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.transform = `scaleX(${scrollable > 0 ? window.scrollY / scrollable : 0})`;
+  };
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  window.addEventListener("resize", updateProgress);
+  revealObserver = "IntersectionObserver" in window ? new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 }) : null;
+  function observeFadeUps() {
+    $$(".fade-up:not(.is-visible)").forEach((element) => {
+      if (revealObserver) revealObserver.observe(element);
+      else element.classList.add("is-visible");
+    });
+  }
+  observeFadeUps();
+})();
