@@ -419,9 +419,9 @@ const wedding = {
       previewLink: "View full program"
     },
     story: {
-      label: "A little about us",
+      label: "Our story",
       heading: "Where their love story becomes forever",
-      text: "Placeholder: a short story of how Precious and Aaron met and grew together.",
+      text: "A new chapter, shared with the people they love.",
       photoAlt: ["Precious and Aaron together", "A moment from the pre-wedding shoot"]
     },
     details: {
@@ -461,11 +461,11 @@ const wedding = {
       heading: "Good to Know",
       colours: "Colours of the day",
       arrival: "Arrival & Seating",
-      arrivalText: "Please arrive early so you can be seated before the ceremony begins.",
-      travel: "Travel & Accommodation",
-      travelText: "Travel and accommodation details will be shared as they are confirmed.",
+      arrivalText: "Please be seated before the ceremony begins.",
+      travel: "Travel",
+      travelText: "Travel details to follow.",
       questions: "Questions",
-      questionText: "For any questions on the day, please contact our coordinator."
+      questionText: "Contact our coordinator if you need help."
     },
     contactSection: {
       label: "We are here to help",
@@ -583,7 +583,7 @@ program: {
   },
   story: {
     heading: "Where their love story becomes forever",
-    text: "Placeholder: a short story of how Precious and Aaron met and grew together."
+    text: "A new chapter, shared with the people they love."
   },
   images: {
     hero: photoManifest.preWedding[2]?.full || "",

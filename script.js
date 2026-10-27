@@ -51,14 +51,21 @@
     return `<article class="event-card fade-up"><p class="eyebrow">${kind === "traditional" ? "01" : kind === "church" ? "02" : "03"}</p><h3>${escapeHtml(heading)}</h3>${details}</article>`;
   };
 
-  const directionsCard = (kind, event) => `
-    <article class="map-card fade-up">
-      <div><p class="eyebrow">${escapeHtml(wedding.copy.directions[kind])}</p><h3>${escapeHtml(event.venue)}</h3><p class="map-address">${escapeHtml(event.address || event.venue)}</p>
-        <dl class="map-details"><div><dt>${escapeHtml(wedding.copy.details.dateLabel)}</dt><dd>${escapeHtml(formattedDate(event.date))}</dd></div><div><dt>${escapeHtml(wedding.copy.details.timeLabel)}</dt><dd>${escapeHtml(event.time === "TBD" ? wedding.copy.details.tbd : event.time || wedding.copy.details.tbd)}</dd></div></dl>
-        <p class="map-notes">${escapeHtml(event.notes)}</p>
-        <div class="map-actions"><a class="button button-primary directions-primary" href="${mapUrl(event.mapQuery)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.directions.directionsButton)} <span aria-hidden="true">→</span></a><button class="button button-secondary copy-address" type="button" data-address="${escapeHtml(event.address || event.venue)}">Copy address<span class="copy-status" aria-live="polite"></span></button><a class="button button-secondary" href="https://wa.me/?text=${encodeURIComponent(`${event.venue} — ${mapUrl(event.mapQuery)}`)}" target="_blank" rel="noopener noreferrer">Share on WhatsApp</a></div>
-      </div><iframe title="${escapeHtml(wedding.copy.directions[kind])} map: ${escapeHtml(event.venue)}" src="${mapUrl(event.mapQuery, true)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-    </article>`;
+  const directionsCard = (kind, event) => {
+    const date = event.date === "TBD" ? null : formattedDate(event.date);
+    const time = event.time && event.time !== "TBD" ? event.time : null;
+    const schedule = date && time
+      ? `${date} · ${time}`
+      : date || time || "Date and time to be confirmed";
+    const address = event.address || event.venue;
+    return `
+      <article class="map-card fade-up">
+        <div class="map-card-copy"><p class="eyebrow">${escapeHtml(wedding.copy.directions[kind])}</p><h3>${escapeHtml(event.venue)}</h3><p class="map-address">${escapeHtml(address)}</p>
+          <p class="map-schedule">${escapeHtml(schedule)}</p>
+          <div class="map-actions"><a class="button button-primary directions-primary" href="${mapUrl(event.mapQuery)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.directions.directionsButton)} <span aria-hidden="true">→</span></a><button class="button button-secondary copy-address" type="button" data-address="${escapeHtml(address)}">Copy address<span class="copy-status" aria-live="polite"></span></button><a class="button button-secondary" href="https://wa.me/?text=${encodeURIComponent(`${event.venue} — ${mapUrl(event.mapQuery)}`)}" target="_blank" rel="noopener noreferrer">Share on WhatsApp</a></div>
+        </div><iframe title="${escapeHtml(wedding.copy.directions[kind])} map: ${escapeHtml(event.venue)}" src="${mapUrl(event.mapQuery, true)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </article>`;
+  };
 
   const renderHome = () => {
     const churchDate = formattedDate(wedding.events.church.date, true);
@@ -83,19 +90,14 @@
         </section>
         <section class="section gallery-section dark-section" id="gallery">${sectionHeading(wedding.copy.gallery.label, wedding.copy.gallery.heading)}<div class="gallery-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.gallery.heading)}">${galleryTabMarkup("home-gallery")}</div><div class="gallery-panel" id="home-gallery-panel" role="tabpanel" aria-labelledby="home-gallery-tab-0"><div class="gallery-grid home-gallery-grid"></div></div><p class="gallery-empty" hidden>${escapeHtml(wedding.copy.gallery.coming)}</p><a class="button button-outline gallery-full-link" href="gallery.html">${escapeHtml(wedding.copy.gallery.seeFull)} <span aria-hidden="true">→</span></a></section>
         <section class="section details-section" id="details"><div class="direction-heading" id="directions">${sectionHeading(wedding.copy.directions.label, wedding.copy.directions.heading)}</div><div class="maps-grid">${directionsCard("church", wedding.events.church)}${directionsCard("reception", wedding.events.reception)}</div></section>
-        <section class="section know-section" id="good-to-know">${sectionHeading(wedding.copy.goodToKnow.label, wedding.copy.goodToKnow.heading)}<div class="know-grid"><article class="know-card fade-up"><p class="eyebrow">01</p><h3>${escapeHtml(wedding.copy.goodToKnow.colours)}</h3><div class="swatches">${wedding.colours.map((colour) => `<div><span style="--swatch:${escapeHtml(colour.hex)}" aria-hidden="true"></span><small>${escapeHtml(colour.name)}</small></div>`).join("")}</div></article><article class="know-card fade-up"><p class="eyebrow">02</p><h3>${escapeHtml(wedding.copy.goodToKnow.arrival)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.arrivalText)}</p></article><article class="know-card fade-up"><p class="eyebrow">03</p><h3>${escapeHtml(wedding.copy.goodToKnow.travel)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.travelText)}</p></article><article class="know-card fade-up"><p class="eyebrow">04</p><h3>${escapeHtml(wedding.copy.goodToKnow.questions)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.questionText)}</p><a class="text-link" href="index.html#contact">${escapeHtml(wedding.copy.contactSection.heading)} <span aria-hidden="true">→</span></a></article></div></section>
+        <section class="section know-section" id="good-to-know">${sectionHeading(wedding.copy.goodToKnow.label, wedding.copy.goodToKnow.heading)}<div class="know-grid"><article class="know-card fade-up"><h3>${escapeHtml(wedding.copy.goodToKnow.colours)}</h3><div class="swatches">${wedding.colours.map((colour) => `<div><span style="--swatch:${escapeHtml(colour.hex)}" aria-hidden="true"></span><small>${escapeHtml(colour.name)}</small></div>`).join("")}</div></article><article class="know-card fade-up"><h3>${escapeHtml(wedding.copy.goodToKnow.arrival)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.arrivalText)}</p></article><article class="know-card fade-up"><h3>${escapeHtml(wedding.copy.goodToKnow.travel)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.travelText)}</p></article><article class="know-card fade-up"><h3>${escapeHtml(wedding.copy.goodToKnow.questions)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.questionText)}</p><a class="text-link" href="index.html#contact">${escapeHtml(wedding.copy.contactSection.heading)} <span aria-hidden="true">→</span></a></article></div></section>
         <section class="contact-section" id="contact"><div class="contact-content fade-up"><p class="eyebrow">${escapeHtml(wedding.copy.contactSection.label)}</p><h2>${escapeHtml(wedding.copy.contactSection.heading)}</h2><p class="contact-name">${escapeHtml(wedding.contact.name)}</p><p class="contact-phone">${escapeHtml(wedding.contact.phone)}</p><div class="contact-actions"><a class="button button-primary" href="https://wa.me/${whatsappHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.contactSection.whatsapp)} <span aria-hidden="true">→</span></a><a class="text-link" href="tel:${phoneHref}">${escapeHtml(wedding.copy.contactSection.call)}</a></div></div></section>
       </main>`;
   };
 
   const homeProgramItems = (items, prefix) => {
-    let lastGroup = null;
     return items.map((item, index) => ({ item, index })).filter(({ item }) => item.featured).map(({ item, index }) => {
-      const groupHeading = item.group && item.group !== lastGroup ? `<h3 class="preview-group">${escapeHtml(item.group)}</h3>` : "";
-      lastGroup = item.group || null;
-      const number = String(index + 1).padStart(2, "0");
-      const time = item.time ? `<span class="program-time">${escapeHtml(item.time)}</span>` : "";
-      return `${groupHeading}<a class="program-preview-item" href="program.html#${prefix}-${index + 1}"><div class="program-preview-meta"><span class="program-number">${number}</span>${time}</div><h3>${escapeHtml(item.title || "")}</h3>${programFields(item)}</a>`;
+      return `<a class="program-preview-item" href="program.html#${prefix}-${index + 1}"><h3>${escapeHtml(item.title || "")}</h3></a>`;
     }).join("");
   };
 
