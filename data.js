@@ -5,32 +5,36 @@ const photoManifest = {
     "full": "images/pre-wedding/full/pre-01.jpg",
     "thumb": "images/pre-wedding/thumb/pre-01.jpg",
     "width": 853,
-    "height": 1280
+    "height": 1280,
+    "focus": "center 20%"
   },
   {
     "full": "images/pre-wedding/full/pre-02.jpg",
     "thumb": "images/pre-wedding/thumb/pre-02.jpg",
     "width": 853,
-    "height": 1280
+    "height": 1280,
+    "focus": "center 25%"
   },
   {
     "full": "images/pre-wedding/full/pre-03.jpg",
     "thumb": "images/pre-wedding/thumb/pre-03.jpg",
     "width": 853,
-    "height": 1280
+    "height": 1280,
+    "focus": "center 25%"
   },
   {
     "full": "images/pre-wedding/full/pre-04.jpg",
     "thumb": "images/pre-wedding/thumb/pre-04.jpg",
     "width": 853,
     "height": 1280,
-    "objectPosition": "52% 43%"
+    "focus": "center 30%"
   },
   {
     "full": "images/pre-wedding/full/pre-05.jpg",
     "thumb": "images/pre-wedding/thumb/pre-05.jpg",
     "width": 853,
-    "height": 1280
+    "height": 1280,
+    "focus": "center 35%"
   }
 ],
   traditional: [
@@ -408,7 +412,8 @@ const wedding = {
       heading: "The Wedding Program",
       churchTab: "Solemnization of Holy Matrimony",
       receptionTab: "Reception",
-      print: "Print / Save as PDF",
+      download: "Download Program (PDF)",
+      print: "Print",
       notesLabel: "Please note",
       fullLink: "View full program",
       previewLink: "View full program"
@@ -440,7 +445,6 @@ const wedding = {
       reception: "Reception",
       directionsButton: "Get Directions",
       fallback: "Open in Maps",
-      roadmapAlt: "Roadmap to the wedding venue"
     },
     gallery: {
       label: "The memories",
@@ -492,35 +496,86 @@ const wedding = {
       date: "2026-10-31T10:00:00+01:00",
       venue: "Calvary Anglican Church, Alesa Parish",
       address: "Alesa, Eleme Local Government, Rivers State",
+      time: "10:00 AM",
       mapQuery: "Calvary Anglican Church Alesa Eleme Rivers State",
-      notes: "Please arrive early. Parking details to be added.",
-      roadmap: "images/directions/church-roadmap.png"
+      notes: "Please arrive early. Parking details to be added."
     },
     reception: {
       name: "Reception",
       date: "TBD",
       venue: "Eleme Civic Center",
       address: "Ogale, Eleme, Rivers State",
+      time: "TBD",
       mapQuery: "Eleme Civic Center Ogale Eleme Rivers State",
-      notes: "Details to be confirmed.",
-      roadmap: "images/directions/reception-roadmap.png"
+      notes: "Details to be confirmed."
     }
   },
-  program: {
-    church: [
-      { time: "9:30 AM", title: "Guests Arrive & Seating", description: "Guests are ushered to their seats.", image: "preWedding", photoIndex: 0 },
-      { time: "10:00 AM", title: "Processional", description: "The wedding party and the couple enter.", image: "preWedding", photoIndex: 2 },
-      { time: "10:30 AM", title: "Church Service", description: "Hymns, readings and sermon.", hymn: "To be confirmed.", image: "preWedding", photoIndex: 3 },
-      { time: "11:30 AM", title: "Exchange of Vows & Rings", description: "The solemnization of holy matrimony.", notes: "The full service order will be added once approved.", image: "preWedding", photoIndex: 4 },
-      { time: "12:15 PM", title: "Signing of the Register & Photos", description: "Official signing and family photographs.", image: "preWedding", photoIndex: 0 }
-    ],
-    reception: [
-      { time: "TBD", title: "Arrival of Guests", description: "To be confirmed.", group: "Welcome" },
-      { time: "TBD", title: "Entrance of the Couple", description: "To be confirmed.", group: "Welcome" },
-      { time: "TBD", title: "Meal, Toasts & Speeches", description: "To be confirmed.", group: "Celebration" },
-      { time: "TBD", title: "First Dance & Cake Cutting", description: "To be confirmed.", group: "Celebration" }
-    ]
-  },
+  // PASTE THIS over the existing `program: { ... },` block in data.js
+// Source: CHI-ESON_2026_Wedding_Programme_Complete.docx
+// - Item order = the printed programme numbers (church 1-17, reception 01-14).
+// - featured: true  = also shown in the short preview on the home page.
+// - No item times were given in the programme, so none are shown (church starts 10:00 AM).
+// - Full hymn words, vows and prayers stay in the downloadable PDF.
+
+program: {
+  officiating: [
+    { name: "Rev'd Canon Samuel Chujor" },
+    { name: "Rev'd Josiah Chinedu Ogbona" },
+    { name: "Evang Emmanuel Kikaiobari Ollornwi" },
+    { name: "Calvary Anglican Church Choir" },
+    { role: "Choir Master", name: "Mr. Gospel Mkpe" },
+    { role: "Organist", name: "Mr. Benson Osarobbeyi" }
+  ],
+
+  church: [
+    { title: "Processional Hymn", group: "The Entrance", hymn: "SS&S 306 — “There shall be showers of blessing”", description: "Congregational singing.", featured: true, image: "preWedding", photoIndex: 0 },
+    { title: "Bridal March", group: "The Entrance", description: "Organ symphony.", featured: true, image: "preWedding", photoIndex: 1 },
+    { title: "Opening Hymn", group: "The Entrance", hymn: "SS&S 307 — “God is here, and that to bless us”", description: "Congregational singing." },
+
+    { title: "Introduction", group: "The Marriage Service", description: "The congregation stands as the bride and bridegroom stand before the Priest." },
+    { title: "Declaration", group: "The Marriage Service", description: "The Priest charges the couple to declare any reason they may not lawfully marry." },
+    { title: "Marriage — Vows & Exchange of Rings", group: "The Marriage Service", description: "The questions of consent, the giving of the bride, the vows and the exchange of rings, followed by the blessing of the couple.", featured: true, image: "preWedding", photoIndex: 2 },
+    { title: "The Acclamation", group: "The Marriage Service", description: "The parents of the bridegroom, or their representatives, receive the bride into the family, and the Priest prays for the family." },
+
+    { title: "Ministry of the Word", group: "The Word", description: "Psalm 128 · First Lesson: Genesis 2:18–25 · Second Lesson: Ephesians 5:21–32.", featured: true, image: "preWedding", photoIndex: 3 },
+    { title: "Hymn for Exhortation", group: "The Word", hymn: "“God Give Us a Christian Home”", description: "Congregational singing." },
+    { title: "Exhortation", group: "The Word" },
+    { title: "Anthem by the Choir", group: "The Word", description: "Calvary Anglican Church Choir." },
+    { title: "Thanksgiving", group: "The Word", description: "Band." },
+
+    { title: "Hymn for Prayer for the Couple", group: "Prayer & Blessing", hymn: "A&M 463 — “O perfect Love, all human thought transcending”", description: "All kneeling." },
+    { title: "Concluding Prayer / Benediction", group: "Prayer & Blessing" },
+
+    { title: "Signing of Marriage Register", group: "Closing", featured: true, image: "preWedding", photoIndex: 4 },
+    { title: "Introduction of the New Couple", group: "Closing", featured: true, image: "preWedding", photoIndex: 0 },
+    { title: "Recessing", group: "Closing", description: "Band.", featured: true, image: "preWedding", photoIndex: 1 }
+  ],
+
+  reception: [
+    { title: "Arrival of the Guests" },
+    { title: "Introduction of M.C" },
+    { title: "Introduction of Dignitaries" },
+    { title: "Let’s Welcome the Couple", featured: true },
+    { title: "Opening Prayer" },
+    { title: "Chairman’s Opening Speech" },
+    { title: "Introduction and Cutting of Cake", featured: true },
+    { title: "First Assignment" },
+    { title: "Toast", featured: true },
+    { title: "Nuptial Dance", featured: true },
+    { title: "Presentation of Gifts", featured: true },
+    { title: "Vote of Thanks" },
+    { title: "Chairman’s Closing Remark" },
+    { title: "Closing Prayer", featured: true }
+  ],
+
+  bridalCrew: [
+    { role: "Best Man", names: ["Mr. Johnson Nwafor Ejire"] },
+    { role: "Maid of Honour", names: ["Miss Juliet Korie"] },
+    { role: "Bride Parent", names: ["Mrs. Florence Korie"] },
+    { role: "Father of the Day", names: ["Mr. Moses Ollor Mbaollor"] },
+    { role: "Mother of the Day", names: ["Mrs. Catherine Mbaollor", "Mrs. Florence Korie", "Mrs. Lydia L. Mkpe"] }
+  ]
+},
   gallery: {
     preWedding: photoManifest.preWedding,
     traditional: photoManifest.traditional,
@@ -531,8 +586,8 @@ const wedding = {
     text: "Placeholder: a short story of how Precious and Aaron met and grew together."
   },
   images: {
-    hero: "images/pre-wedding/full/hero-background.webp",
-    story: photoManifest.preWedding[2]?.full || "",
+    hero: photoManifest.preWedding[2]?.full || "",
+    story: photoManifest.preWedding[3]?.full || "",
     storySmall: photoManifest.preWedding[0]?.full || ""
   }
 };
