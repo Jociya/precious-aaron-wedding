@@ -9,6 +9,9 @@
   const phoneHref = wedding.contact.phone.replace(/[^\d+]/g, "");
   const whatsappHref = wedding.contact.whatsapp.replace(/\D/g, "");
   const mapUrl = (query, embed = false) => `https://www.google.com/maps${embed ? "" : "/search/"}?${embed ? "q" : "api=1&query"}=${encodeURIComponent(query)}${embed ? "&output=embed" : ""}`;
+  const formattedDate = (date, weekday = false) => date === "TBD"
+    ? wedding.copy.status.tbd
+    : new Date(date).toLocaleDateString("en-GB", { ...(weekday ? { weekday: "long" } : {}), day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos" });
   const countdownMarkup = (id) => `<div class="countdown" id="${id}" role="timer" aria-live="off"><span class="countdown-status"></span><div class="countdown-units">${wedding.copy.countdownLabels.map((label, index) => `<div><strong data-unit="${["days", "hours", "minutes", "seconds"][index]}">00</strong><span>${escapeHtml(label)}</span></div>`).join("")}</div></div>`;
   const sectionHeading = (label, heading) => `<div class="section-heading fade-up"><p class="eyebrow">${escapeHtml(label)}</p><h2>${escapeHtml(heading)}</h2><span class="ornament" aria-hidden="true">✳</span></div>`;
 
@@ -32,8 +35,12 @@
   };
   const fullImageMarkup = (photo, alt, className = "", loading = "lazy") => {
     if (!photo) return "";
-    return `<img${className ? ` class="${className}"` : ""} src="${escapeHtml(photo.full)}" alt="${escapeHtml(alt)}" width="${Number(photo.width)}" height="${Number(photo.height)}" loading="${loading}" decoding="async">`;
+    const position = photo.objectPosition ? ` style="object-position:${escapeHtml(photo.objectPosition)}"` : "";
+    return `<img${className ? ` class="${className}"` : ""}${position} src="${escapeHtml(photo.full)}" alt="${escapeHtml(alt)}" width="${Number(photo.width)}" height="${Number(photo.height)}" loading="${loading}" decoding="async">`;
   };
+  const photoRevealMarkup = (photo, alt, className = "", loading = "lazy") => photo
+    ? `<div class="photo-reveal arch-reveal ${className}">${imageMarkup(photo, alt, "", loading)}</div>`
+    : "";
 
   const getProgramImage = (item) => {
     if (!item.image || !wedding.gallery[item.image]) return null;
@@ -51,28 +58,35 @@
   const directionsCard = (kind, event) => `
     <article class="map-card fade-up">
       <div><p class="eyebrow">${escapeHtml(wedding.copy.directions[kind])}</p><h3>${escapeHtml(event.venue)}</h3><p>${escapeHtml(event.address || event.venue)}</p>
+        <dl class="map-details"><div><dt>${escapeHtml(wedding.copy.details.dateLabel)}</dt><dd>${escapeHtml(formattedDate(event.date))}</dd></div>${kind === "church" ? `<div><dt>${escapeHtml(wedding.copy.details.timeLabel)}</dt><dd>${escapeHtml(wedding.copy.details.churchTime)}</dd></div>` : ""}<div><dt>${escapeHtml(wedding.copy.details.venueLabel)}</dt><dd>${escapeHtml(event.venue)}</dd></div></dl>
         <figure class="roadmap-slot" hidden><button class="roadmap-open" type="button" aria-label="Open ${escapeHtml(wedding.copy.directions[kind])} roadmap"><img src="${escapeHtml(event.roadmap)}" alt="${escapeHtml(wedding.copy.directions.roadmapAlt)}" width="1200" height="800" loading="lazy" decoding="async"><span>Tap to view roadmap</span></button></figure>
         <p class="map-notes">${escapeHtml(event.notes)}</p><a class="button button-outline" href="${mapUrl(event.mapQuery)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.directions.directionsButton)} <span aria-hidden="true">→</span></a><a class="map-fallback" href="${mapUrl(event.mapQuery)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.directions.fallback)}</a>
       </div><iframe title="${escapeHtml(wedding.copy.directions[kind])} map: ${escapeHtml(event.venue)}" src="${mapUrl(event.mapQuery, true)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </article>`;
 
   const renderHome = () => {
-    const churchDate = wedding.events.church.date === "TBD" ? wedding.copy.status.tbd : new Date(wedding.events.church.date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Lagos" });
+    const churchDate = formattedDate(wedding.events.church.date, true);
+    const traditionalDate = formattedDate(wedding.events.traditional.date);
+    const heroPhoto = wedding.gallery.preWedding[3];
     return `
       <main>
         <section class="hero" id="home">
-          <div class="hero-content fade-up"><p class="eyebrow">${escapeHtml(wedding.copy.heroLabel)}</p><h1>${escapeHtml(wedding.couple.bride)} <span>&amp;</span> ${escapeHtml(wedding.couple.groom)}</h1><p class="hero-intro">${escapeHtml(wedding.copy.invitation)}</p><p class="hero-date">${escapeHtml(churchDate)}<br><span>${escapeHtml(wedding.events.church.venue)}</span></p>${countdownMarkup("hero-countdown")}<div class="hero-actions"><a class="button button-primary button-large" href="#program">${escapeHtml(wedding.copy.heroActions[0])} <span aria-hidden="true">→</span></a><a class="button button-light-outline" href="#directions">${escapeHtml(wedding.copy.heroActions[1])}</a></div></div>
-          ${wedding.images.hero ? fullImageMarkup(wedding.gallery.preWedding[3], "Precious and Aaron at their pre-wedding shoot", "hero-photo", "eager") : ""}
+          <div class="hero-content"><p class="eyebrow">${escapeHtml(wedding.copy.heroLabel)}</p><h1><span class="hero-name">${escapeHtml(wedding.couple.bride)}</span><span class="hero-name hero-ampersand"><i>&amp;</i></span><span class="hero-name">${escapeHtml(wedding.couple.groom)}</span></h1><p class="hero-intro">${escapeHtml(wedding.copy.invitation)}</p><p class="hero-date">${escapeHtml(churchDate)}<br><span>${escapeHtml(wedding.events.church.venue)}</span></p>${countdownMarkup("hero-countdown")}<div class="hero-actions"><a class="button button-primary button-large" href="program.html">${escapeHtml(wedding.copy.heroActions[0])} <span aria-hidden="true">→</span></a><a class="button button-light-outline" href="${mapUrl(wedding.events.church.mapQuery)}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.heroActions[1])}</a></div></div>
+          ${wedding.images.hero ? `<picture class="hero-media"><source media="(min-width: 601px)" srcset="${escapeHtml(wedding.images.hero)}">${fullImageMarkup(heroPhoto, "Precious and Aaron at their pre-wedding shoot", "hero-photo", "eager")}</picture>` : ""}
         </section>
+        <section class="section journey-section" id="journey">${sectionHeading("The celebrations", "Our Journey")}<div class="journey-track"><span class="journey-line" aria-hidden="true"></span>
+          <article class="journey-chapter fade-up"><span class="journey-dot" aria-hidden="true"></span>${photoRevealMarkup(wedding.gallery.preWedding[0], wedding.copy.story.photoAlt[1], "journey-photo")}<div class="journey-copy"><p class="eyebrow">01 · A beginning</p><h3>Pre-Wedding</h3><p>${escapeHtml(wedding.copy.invitation)}</p></div></article>
+          <article class="journey-chapter fade-up"><span class="journey-dot" aria-hidden="true"></span>${photoRevealMarkup(wedding.gallery.traditional[6], wedding.copy.details.traditional, "journey-photo")}<div class="journey-copy"><p class="eyebrow">02 · ${escapeHtml(traditionalDate)}</p><h3>${escapeHtml(wedding.events.traditional.name)}</h3><p>${escapeHtml(wedding.copy.details.completed)}</p><a class="text-link" href="gallery.html?tab=traditional">${escapeHtml(wedding.copy.details.photos)} <span aria-hidden="true">→</span></a></div></article>
+          <article class="journey-chapter fade-up"><span class="journey-dot" aria-hidden="true"></span>${photoRevealMarkup(wedding.gallery.preWedding[4], wedding.copy.story.photoAlt[0], "journey-photo")}<div class="journey-copy"><p class="eyebrow">03 · ${escapeHtml(formattedDate(wedding.events.church.date))}</p><h3>${escapeHtml(wedding.events.church.name)}</h3><p>${escapeHtml(wedding.events.church.venue)}</p></div></article>
+        </div></section>
+        <section class="section story-section dark-section" id="story">${sectionHeading(wedding.copy.story.label, wedding.story.heading)}<div class="story-layout"><div class="story-copy fade-up"><p>${escapeHtml(wedding.story.text)}</p><p class="story-names">${escapeHtml(wedding.fullNames)}</p></div>${photoRevealMarkup(wedding.gallery.preWedding[2], wedding.copy.story.photoAlt[0], "story-photos parallax-photo")}</div></section>
         <section class="section program-section" id="program">${sectionHeading(wedding.copy.program.label, wedding.copy.program.heading)}
           <div class="program-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.program.heading)}"><button id="church-tab" role="tab" type="button" aria-selected="true" aria-controls="church-program" tabindex="0">${escapeHtml(wedding.copy.program.churchTab)}</button><button id="reception-tab" role="tab" type="button" aria-selected="false" aria-controls="reception-program" tabindex="-1">${escapeHtml(wedding.copy.program.receptionTab)}</button></div>
           <div class="program-layout"><div class="program-panel-wrap" id="church-program" role="tabpanel" aria-labelledby="church-tab"><ol class="program-list">${homeProgramItems(wedding.program.church, "church")}</ol></div><div class="program-panel-wrap" id="reception-program" role="tabpanel" aria-labelledby="reception-tab" hidden><ol class="program-list">${homeProgramItems(wedding.program.reception, "reception")}</ol></div><figure class="program-photo"><img src="${escapeHtml(getProgramImage(wedding.program.church[0])?.thumb || "")}" alt="${escapeHtml(wedding.program.church[0].title)}" width="${Number(getProgramImage(wedding.program.church[0])?.width || 800)}" height="${Number(getProgramImage(wedding.program.church[0])?.height || 1000)}" loading="lazy" decoding="async"><figcaption class="photo-caption">${escapeHtml(wedding.program.church[0].title)}</figcaption></figure></div>
-          <a class="button button-outline print-button" href="program.html">${escapeHtml(wedding.copy.program.fullLink)} <span aria-hidden="true">→</span></a>
+          <a class="button button-outline print-button" href="program.html">${escapeHtml(wedding.copy.program.previewLink)} <span aria-hidden="true">→</span></a>
         </section>
-        <section class="section story-section" id="story">${sectionHeading(wedding.copy.story.label, wedding.story.heading)}<div class="story-layout"><div class="story-copy fade-up"><p>${escapeHtml(wedding.story.text)}</p><p class="story-names">${escapeHtml(wedding.fullNames)}</p></div><div class="story-photos fade-up">${imageMarkup(wedding.gallery.preWedding[2], wedding.copy.story.photoAlt[0], "story-photo-main arch-image")} ${imageMarkup(wedding.gallery.preWedding[0], wedding.copy.story.photoAlt[1], "story-photo-small arch-image")}</div></div></section>
-        <section class="section details-section" id="details">${sectionHeading(wedding.copy.details.label, wedding.copy.details.heading)}<div class="event-grid">${eventCard(wedding.events.traditional, "traditional")}${eventCard(wedding.events.church, "church")}${eventCard(wedding.events.reception, "reception")}</div></section>
-        <section class="section directions-section" id="directions">${sectionHeading(wedding.copy.directions.label, wedding.copy.directions.heading)}<div class="maps-grid">${directionsCard("church", wedding.events.church)}${directionsCard("reception", wedding.events.reception)}</div></section>
-        <section class="section gallery-section" id="gallery">${sectionHeading(wedding.copy.gallery.label, wedding.copy.gallery.heading)}<div class="gallery-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.gallery.heading)}">${galleryTabMarkup("home-gallery")}</div><div class="gallery-panel" id="home-gallery-panel" role="tabpanel" aria-labelledby="home-gallery-tab-0"><div class="gallery-grid home-gallery-grid"></div></div><p class="gallery-empty" hidden>${escapeHtml(wedding.copy.gallery.coming)}</p><a class="button button-outline gallery-full-link" href="gallery.html">${escapeHtml(wedding.copy.gallery.seeFull)} <span aria-hidden="true">→</span></a></section>
+        <section class="section gallery-section dark-section" id="gallery">${sectionHeading(wedding.copy.gallery.label, wedding.copy.gallery.heading)}<div class="gallery-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.gallery.heading)}">${galleryTabMarkup("home-gallery")}</div><div class="gallery-panel" id="home-gallery-panel" role="tabpanel" aria-labelledby="home-gallery-tab-0"><div class="gallery-grid home-gallery-grid"></div></div><p class="gallery-empty" hidden>${escapeHtml(wedding.copy.gallery.coming)}</p><a class="button button-outline gallery-full-link" href="gallery.html">${escapeHtml(wedding.copy.gallery.seeFull)} <span aria-hidden="true">→</span></a></section>
+        <section class="section details-section" id="details">${sectionHeading(wedding.copy.details.label, wedding.copy.details.heading)}<div class="direction-heading" id="directions">${sectionHeading(wedding.copy.directions.label, wedding.copy.directions.heading)}</div><div class="maps-grid">${directionsCard("church", wedding.events.church)}${directionsCard("reception", wedding.events.reception)}</div></section>
         <section class="section know-section" id="good-to-know">${sectionHeading(wedding.copy.goodToKnow.label, wedding.copy.goodToKnow.heading)}<div class="know-grid"><article class="know-card fade-up"><p class="eyebrow">01</p><h3>${escapeHtml(wedding.copy.goodToKnow.colours)}</h3><div class="swatches">${wedding.colours.map((colour) => `<div><span style="--swatch:${escapeHtml(colour.hex)}" aria-hidden="true"></span><small>${escapeHtml(colour.name)}</small></div>`).join("")}</div></article><article class="know-card fade-up"><p class="eyebrow">02</p><h3>${escapeHtml(wedding.copy.goodToKnow.arrival)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.arrivalText)}</p></article><article class="know-card fade-up"><p class="eyebrow">03</p><h3>${escapeHtml(wedding.copy.goodToKnow.travel)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.travelText)}</p></article><article class="know-card fade-up"><p class="eyebrow">04</p><h3>${escapeHtml(wedding.copy.goodToKnow.questions)}</h3><p>${escapeHtml(wedding.copy.goodToKnow.questionText)}</p><a class="text-link" href="index.html#contact">${escapeHtml(wedding.copy.contactSection.heading)} <span aria-hidden="true">→</span></a></article></div></section>
         <section class="contact-section" id="contact"><div class="contact-content fade-up"><p class="eyebrow">${escapeHtml(wedding.copy.contactSection.label)}</p><h2>${escapeHtml(wedding.copy.contactSection.heading)}</h2><p class="contact-name">${escapeHtml(wedding.contact.name)}</p><p class="contact-phone">${escapeHtml(wedding.contact.phone)}</p><div class="contact-actions"><a class="button button-primary" href="https://wa.me/${whatsappHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(wedding.copy.contactSection.whatsapp)} <span aria-hidden="true">→</span></a><a class="text-link" href="tel:${phoneHref}">${escapeHtml(wedding.copy.contactSection.call)}</a></div></div></section>
       </main>`;
@@ -222,9 +236,10 @@
   let activePhotoIndex = 0;
   let visiblePhotoCount = 12;
   let lightboxOpener = null;
+  let touchStartX = 0;
 
   const createPhotoButtons = (photos, start, end, groupIndex) => photos.slice(start, end).map((photo, offset) => `
-    <button class="gallery-item fade-up" type="button" data-photo-index="${start + offset}" aria-label="Open ${escapeHtml(wedding.copy.gallery.tabs[groupIndex])} photo ${start + offset + 1}">
+    <button class="gallery-item fade-up" type="button" data-photo-index="${start + offset}" aria-label="Open ${escapeHtml(wedding.copy.gallery.tabs[groupIndex])} photo ${start + offset + 1}" style="--gallery-order:${offset % 6}">
       ${imageMarkup(photo, `${wedding.copy.gallery.tabs[groupIndex]} photograph ${start + offset + 1}`)}
     </button>`).join("");
 
@@ -290,12 +305,28 @@
   const openLightbox = (index, opener) => {
     activePhotoIndex = index;
     lightboxOpener = opener;
+    const source = $("img", opener) || opener;
+    const sourceRect = source.getBoundingClientRect();
     displayLightboxPhoto();
     lightbox.hidden = false;
     document.body.classList.add("lightbox-open");
     $(".lightbox-close", lightbox).focus();
+    requestAnimationFrame(() => {
+      lightbox.classList.add("is-open");
+      if (reducedMotion) return;
+      const targetRect = lightboxImage.getBoundingClientRect();
+      if (!targetRect.width || !targetRect.height) return;
+      lightboxImage.style.transformOrigin = "top left";
+      lightboxImage.style.transition = "none";
+      lightboxImage.style.transform = `translate(${sourceRect.left - targetRect.left}px, ${sourceRect.top - targetRect.top}px) scale(${sourceRect.width / targetRect.width}, ${sourceRect.height / targetRect.height})`;
+      requestAnimationFrame(() => {
+        lightboxImage.style.transition = "";
+        lightboxImage.style.transform = "";
+      });
+    });
   };
   const closeLightbox = () => {
+    lightbox.classList.remove("is-open");
     lightbox.hidden = true;
     document.body.classList.remove("lightbox-open");
     lightboxOpener?.focus();
@@ -314,6 +345,17 @@
   lightboxButtons[1]?.addEventListener("click", () => moveLightbox(1));
   lightbox.addEventListener("click", (event) => {
     if (event.target === lightbox) closeLightbox();
+  });
+  lightbox.addEventListener("touchstart", (event) => {
+    touchStartX = event.changedTouches[0].clientX;
+  }, { passive: true });
+  lightbox.addEventListener("touchend", (event) => {
+    if (lightbox.hidden || lightbox.classList.contains("roadmap-view")) return;
+    const distance = event.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(distance) > 50) moveLightbox(distance < 0 ? 1 : -1);
+  }, { passive: true });
+  lightboxImage.addEventListener("transitionend", () => {
+    lightboxImage.style.transformOrigin = "";
   });
   lightboxImage.addEventListener("click", () => lightboxImage.classList.toggle("is-zoomed"));
   document.addEventListener("keydown", (event) => {
@@ -354,10 +396,12 @@
     lightboxOpener = button;
     lightbox.hidden = false;
     document.body.classList.add("lightbox-open");
+    requestAnimationFrame(() => lightbox.classList.add("is-open"));
     $(".lightbox-close", lightbox).focus();
   }));
 
   if (page === "home") {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     $$(".countdown").forEach((element) => {
       const eventDate = wedding.events.church.date;
       const targetDate = eventDate === "TBD" ? Number.NaN : new Date(eventDate).getTime();
@@ -384,7 +428,16 @@
         units.hidden = false;
         const seconds = Math.floor(difference / 1000);
         const values = { days: Math.floor(seconds / 86400), hours: Math.floor((seconds % 86400) / 3600), minutes: Math.floor((seconds % 3600) / 60), seconds: seconds % 60 };
-        Object.entries(values).forEach(([unit, value]) => { $(`[data-unit="${unit}"]`, element).textContent = String(value).padStart(2, "0"); });
+        Object.entries(values).forEach(([unit, value]) => {
+          const digit = $(`[data-unit="${unit}"]`, element);
+          const nextValue = String(value).padStart(2, "0");
+          if (digit.textContent === nextValue) return;
+          digit.textContent = nextValue;
+          if (!reducedMotion) {
+            digit.classList.remove("is-rolling");
+            requestAnimationFrame(() => digit.classList.add("is-rolling"));
+          }
+        });
       };
       update();
       window.setInterval(update, 1000);
@@ -398,6 +451,7 @@
   };
   window.addEventListener("scroll", updateProgress, { passive: true });
   window.addEventListener("resize", updateProgress);
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   revealObserver = "IntersectionObserver" in window ? new IntersectionObserver((entries, observer) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -407,10 +461,27 @@
     });
   }, { threshold: 0.12 }) : null;
   function observeFadeUps() {
-    $$(".fade-up:not(.is-visible)").forEach((element) => {
+    $$(".fade-up:not(.is-visible), .photo-reveal:not(.is-visible), .journey-track:not(.is-visible)").forEach((element) => {
       if (revealObserver) revealObserver.observe(element);
       else element.classList.add("is-visible");
     });
   }
   observeFadeUps();
+  if (page === "home" && !reducedMotion) {
+    const storyPhoto = $(".parallax-photo");
+    let parallaxFrame = 0;
+    const updateParallax = () => {
+      if (parallaxFrame) return;
+      parallaxFrame = requestAnimationFrame(() => {
+        parallaxFrame = 0;
+        if (!storyPhoto) return;
+        const bounds = storyPhoto.getBoundingClientRect();
+        const offset = Math.max(-40, Math.min(40, (window.innerHeight / 2 - (bounds.top + bounds.height / 2)) * 0.08));
+        storyPhoto.style.setProperty("--parallax-y", `${offset}px`);
+      });
+    };
+    window.addEventListener("scroll", updateParallax, { passive: true });
+    window.addEventListener("resize", updateParallax);
+    updateParallax();
+  }
 })();

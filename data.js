@@ -23,7 +23,8 @@ const photoManifest = {
     "full": "images/pre-wedding/full/pre-04.jpg",
     "thumb": "images/pre-wedding/thumb/pre-04.jpg",
     "width": 853,
-    "height": 1280
+    "height": 1280,
+    "objectPosition": "52% 43%"
   },
   {
     "full": "images/pre-wedding/full/pre-05.jpg",
@@ -530,7 +531,7 @@ const wedding = {
     text: "Placeholder: a short story of how Precious and Aaron met and grew together."
   },
   images: {
-    hero: photoManifest.preWedding[3]?.full || "",
+    hero: "images/pre-wedding/full/hero-background.webp",
     story: photoManifest.preWedding[2]?.full || "",
     storySmall: photoManifest.preWedding[0]?.full || ""
   }
