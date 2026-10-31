@@ -410,7 +410,7 @@ html { scroll-padding-top: var(--header-height); }
 .gallery-item.is-visible img, .gallery-item:hover img, .gallery-item:focus-visible img { filter: saturate(1) sepia(0); }
 .gallery-item:hover img { transform: scale(1.025); }
 .dark-section .button-outline, .gallery-section .button-outline { border-color: var(--gold); color: var(--ivory); }
-.dark-section .button-outline:hover, .gallery-section .button-outline:hover { color: var(--ivory); }
+.dark-section .button-outline:hover, .gallery-section .button-outline:hover { color: var(--chocolate); }
 .gallery-empty { color: var(--ivory); }
 .full-gallery-section .gallery-empty { color: var(--brown); }
 .details-section { background: var(--cream); }
