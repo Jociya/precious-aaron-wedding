@@ -222,9 +222,15 @@
   if (page === "program" && window.location.hash === "#download") {
     const downloadButton = $("#download");
     if (downloadButton) {
-      const goToDownload = () => downloadButton.scrollIntoView({ block: "center", behavior: "instant" });
-      requestAnimationFrame(goToDownload);
-      window.addEventListener("load", goToDownload, { once: true });
+      // Remove #download from the URL so the browser doesn't jump there on its own
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      window.scrollTo(0, 0);
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.addEventListener("load", () => {
+        window.setTimeout(() => {
+          downloadButton.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+        }, 400);
+      }, { once: true });
     }
   }
   
