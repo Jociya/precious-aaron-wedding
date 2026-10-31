@@ -144,7 +144,7 @@
         <div class="program-sticky-tabs"><div class="program-tabs" role="tablist" aria-label="${escapeHtml(wedding.copy.program.heading)}"><button id="full-church-tab" role="tab" type="button" aria-selected="true" aria-controls="full-church-panel" tabindex="0">${escapeHtml(wedding.copy.program.churchTab)}</button><button id="full-reception-tab" role="tab" type="button" aria-selected="false" aria-controls="full-reception-panel" tabindex="-1">${escapeHtml(wedding.copy.program.receptionTab)}</button></div></div>
         <section class="timeline-panel" id="full-church-panel" role="tabpanel" aria-labelledby="full-church-tab">${peopleListMarkup("Officiating Ministers", wedding.program.officiating, "ministers")}<div class="timeline">${timelineMarkup(wedding.program.church, "church")}</div></section>
         <section class="timeline-panel" id="full-reception-panel" role="tabpanel" aria-labelledby="full-reception-tab" hidden>${peopleListMarkup("Bridal Crew", wedding.program.bridalCrew, "crew")}<div class="timeline">${timelineMarkup(wedding.program.reception, "reception")}</div></section>
-        <a class="button button-primary print-button" href="assets/Precious-and-Aaron-Wedding-Program.pdf" download="Precious-and-Aaron-Wedding-Program.pdf">${escapeHtml(wedding.copy.program.download)} <span aria-hidden="true">↓</span></a><button class="print-link print-program" type="button">${escapeHtml(wedding.copy.program.print)}</button>
+        <a id="download" class="button button-primary print-button" href="assets/Precious-and-Aaron-Wedding-Program.pdf" download="Precious-and-Aaron-Wedding-Program.pdf">${escapeHtml(wedding.copy.program.download)} <span aria-hidden="true">↓</span></a><button class="print-link print-program" type="button">${escapeHtml(wedding.copy.program.print)}</button>
       </section>
     </main>`;
 
@@ -219,7 +219,15 @@
       requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
     }
   }
-
+  if (page === "program" && window.location.hash === "#download") {
+    const downloadButton = $("#download");
+    if (downloadButton) {
+      const goToDownload = () => downloadButton.scrollIntoView({ block: "center", behavior: "instant" });
+      requestAnimationFrame(goToDownload);
+      window.addEventListener("load", goToDownload, { once: true });
+    }
+  }
+  
   $$(".copy-address").forEach((button) => {
     button.addEventListener("click", async () => {
       const status = $(".copy-status", button);
